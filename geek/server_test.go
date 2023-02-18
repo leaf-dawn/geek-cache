@@ -28,12 +28,14 @@ func TestServer(t *testing.T) {
 	port := 50000 + r.Intn(100)
 	addr := fmt.Sprintf("localhost:%d", port)
 
-	// 启动服务
 	server, err := NewServer(addr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("geek-cache is running at", addr)
+
+	server.Set(addr)
+	g.RegisterPeers(server)
 
 	go func() {
 		err := server.Start()
@@ -41,16 +43,6 @@ func TestServer(t *testing.T) {
 			log.Fatal(err)
 		}
 	}()
-	// 添加peerPicker
-	picker := NewClientPicker()
-	picker.Set(addr)
-	g.RegisterPeers(picker)
-
-	defer func() {
-		server.Stop()
-		DestroyGroup(g.name)
-	}()
-
 	view, err := g.Get("Tom")
 	if err != nil {
 		t.Fatal(err)
@@ -62,4 +54,6 @@ func TestServer(t *testing.T) {
 	if err == nil || view.String() != "" {
 		t.Errorf("Unknown not exists, but got %s", view.String())
 	}
+
+	DestroyGroup(g.name)
 }
